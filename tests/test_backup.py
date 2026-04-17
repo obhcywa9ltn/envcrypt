@@ -40,6 +40,14 @@ def test_create_backup_is_inside_backup_dir(tmp_path):
     assert dest.parent == get_backup_dir(tmp_path)
 
 
+def test_create_backup_filename_contains_stem(tmp_path):
+    """Backup filename should include the original file's stem for traceability."""
+    src = tmp_path / "prod.env.age"
+    src.write_bytes(b"data")
+    dest = create_backup(src, base_dir=tmp_path)
+    assert "prod.env" in dest.name
+
+
 def test_list_backups_empty_when_no_dir(tmp_path):
     assert list_backups("dev.env.age", base_dir=tmp_path) == []
 
@@ -53,6 +61,16 @@ def test_list_backups_returns_sorted(tmp_path):
     result = list_backups("dev.env.age", base_dir=tmp_path)
     assert result == sorted(result)
     assert len(result) == 2
+
+
+def test_list_backups_only_returns_matching_file(tmp_path):
+    """list_backups should not return backups belonging to a different source file."""
+    for name in ("dev.env.age", "prod.env.age"):
+        src = tmp_path / name
+        src.write_bytes(b"x")
+        create_backup(src, base_dir=tmp_path)
+    result = list_backups("dev.env.age", base_dir=tmp_path)
+    assert all("dev.env" in str(p) for p in result)
 
 
 def test_restore_backup_raises_when_missing(tmp_path):
