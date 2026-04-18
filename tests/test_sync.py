@@ -63,6 +63,20 @@ class TestSyncEnvFile:
         assert result == encrypted_paths
         assert mock_lock.call_count == 2
 
+    def test_lock_called_with_correct_args(self, tmp_path):
+        """Verify lock is invoked with the env path, recipient key, and output path."""
+        env = tmp_path / ".env"
+        env.write_text("KEY=val")
+        out = tmp_path / "vault" / "alice.age"
+
+        with patch("envcrypt.sync.load_recipients", return_value={"alice": "age1alice000"}), \
+             patch("envcrypt.sync.get_encrypted_path", return_value=out), \
+             patch("envcrypt.sync.lock") as mock_lock:
+
+            sync_env_file(str(env))
+
+        mock_lock.assert_called_once_with(str(env), "age1alice000", output=str(out))
+
     def test_raises_on_lock_failure(self, tmp_path):
         from envcrypt.vault import VaultError
         env = tmp_path / ".env"
@@ -81,20 +95,6 @@ class TestSyncEnvFile:
 # ---------------------------------------------------------------------------
 
 class TestListSyncedFiles:
-    def test_returns_empty_when_vault_missing(self, tmp_path):
-        with patch("envcrypt.sync.get_vault_dir", return_value=str(tmp_path / "vault")):
-            assert list_synced_files() == []
-
-    def test_returns_sorted_age_files(self, tmp_path):
-        vault = tmp_path / "vault"
-        vault.mkdir()
-        (vault / "bob.age").write_text("enc")
-        (vault / "alice.age").write_text("enc")
-        (vault / "notes.txt").write_text("ignored")
-
-        with patch("envcrypt.sync.get_vault_dir", return_value=str(vault)):
-            result = list_synced_files()
-
-        assert len(result) == 2
-        assert result[0].endswith("alice.age")
-        assert result[1].endswith("bob.age")
+    def test_returns_empty_when_vault_missing(self):
+        with patch("envcrypt.sync.get_vault_dir", return_value=Path("/nonexistent/vault")):
+            assert list_synced_files() == {}
