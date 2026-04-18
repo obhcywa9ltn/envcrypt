@@ -75,3 +75,27 @@ def clear_audit_log(base_dir: str | None = None) -> None:
         path.write_text(json.dumps([]), encoding="utf-8")
     except OSError as exc:
         raise AuditError(f"Failed to clear audit log: {exc}") from exc
+
+
+def filter_audit_log(
+    action: str | None = None,
+    since: datetime | None = None,
+    base_dir: str | None = None,
+) -> list[dict[str, Any]]:
+    """Return audit log entries filtered by action and/or timestamp.
+
+    Args:
+        action: If provided, only return entries with this action value.
+        since: If provided, only return entries with a timestamp at or after
+            this datetime. Must be timezone-aware.
+        base_dir: Optional directory override for locating the audit log.
+    """
+    entries = load_audit_log(base_dir)
+    if action is not None:
+        entries = [e for e in entries if e.get("action") == action]
+    if since is not None:
+        entries = [
+            e for e in entries
+            if datetime.fromisoformat(e["timestamp"]) >= since
+        ]
+    return entries
