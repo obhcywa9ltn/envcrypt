@@ -30,11 +30,14 @@ def cmd_rename_run(env_file: Path, old_key: str, new_key: str, dest: Path | None
 
 @rename_group.command("keys")
 @click.argument("env_file", type=click.Path(exists=True, path_type=Path))
-def cmd_rename_keys(env_file: Path) -> None:
+@click.option("--count", is_flag=True, default=False, help="Print only the number of keys found.")
+def cmd_rename_keys(env_file: Path, count: bool) -> None:
     """List all keys defined in ENV_FILE."""
     try:
         keys = list_keys(env_file)
-        if keys:
+        if count:
+            click.echo(len(keys))
+        elif keys:
             click.echo("\n".join(keys))
         else:
             click.echo("No keys found.")
