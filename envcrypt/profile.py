@@ -88,3 +88,14 @@ def remove_profile(name: str, base_dir: Optional[Path] = None) -> Dict[str, str]
 def list_profiles(base_dir: Optional[Path] = None) -> List[str]:
     """Return a sorted list of registered profile names."""
     return sorted(load_profiles(base_dir).keys())
+
+
+def get_profile(name: str, base_dir: Optional[Path] = None) -> str:
+    """Return the env file path for a named profile.
+
+    Raises ProfileError if the profile does not exist.
+    """
+    profiles = load_profiles(base_dir)
+    if name not in profiles:
+        raise ProfileError(f"Profile '{name}' does not exist.")
+    return profiles[name]
