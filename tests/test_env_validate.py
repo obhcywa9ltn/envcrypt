@@ -83,3 +83,13 @@ def test_issue_line_number_is_correct(tmp_path):
     result = validate_env_file(p)
     issue = next(i for i in result.issues if "missing '='" in i.message)
     assert issue.line_number == 2
+
+
+def test_flags_multiple_required_keys_missing(tmp_path):
+    """All missing required keys should each produce a separate issue."""
+    p = write(tmp_path, "FOO=bar\n")
+    result = validate_env_file(p, required_keys=["DATABASE_URL", "SECRET_KEY"])
+    assert not result.ok
+    missing = [i.message for i in result.issues]
+    assert any("DATABASE_URL" in m for m in missing)
+    assert any("SECRET_KEY" in m for m in missing)
